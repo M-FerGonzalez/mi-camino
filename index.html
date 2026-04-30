@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mi Camino">
+<meta name="theme-color" content="#e8829a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mi Camino a Agosto 🌸</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --pink:#e8829a; --pink-light:#f5c6d0; --pink-soft:#fdf0f3;
+  --green:#6dbf99; --green-light:#d4f0e4;
+  --purple:#9b7ec8; --purple-light:#ede4f8;
+  --luteal:#b06ab3; --luteal-light:#f3e5f5; --luteal-soft:#fce4ec;
+  --text:#3a3a4c; --text-soft:#7a7a90;
+  --white:#ffffff; --bg:#fdf8fb; --card:#ffffff; --border:#f0e6ed;
+  --shadow:0 4px 20px rgba(232,130,154,.12);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+body { background:var(--bg); font-family:'Segoe UI',system-ui,sans-serif; color:var(--text); min-height:100vh; max-width:520px; margin:0 auto; }
+
+/* LUTEAL MODE */
+body.luteal-mode { --pink:#b06ab3; --pink-soft:#f3e5f5; --pink-light:#e1bee7; --border:#e8d5f0; }
+body.luteal-mode .header { background:linear-gradient(135deg,#b06ab3 0%,#8e44ad 50%,#5c6bc0 100%); }
+body.luteal-mode .tab.active { color:var(--luteal); border-bottom-color:var(--luteal); }
+body.luteal-mode .save-btn { background:linear-gradient(135deg,#b06ab3,#5c6bc0); }
+
+/* HEADER */
+.header { background:linear-gradient(135deg,#e8829a 0%,#c96ea8 50%,#9b7ec8 100%); padding:calc(16px + var(--safe-top)) 20px 18px; color:white; text-align:center; position:relative; overflow:hidden; }
+.header::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.15) 0%,transparent 60%); }
+.header h1 { font-size:1.45rem; font-weight:700; position:relative; }
+.header p { font-size:0.82rem; opacity:.85; margin-top:3px; position:relative; }
+.progress-bar-wrap { background:rgba(255,255,255,.25); border-radius:20px; height:9px; margin:13px auto 5px; max-width:340px; position:relative; }
+.progress-bar-fill { background:white; border-radius:20px; height:100%; transition:width .8s ease; }
+.progress-label { font-size:0.74rem; opacity:.9; position:relative; }
+.luteal-banner { display:none; background:rgba(255,255,255,.18); border-radius:10px; padding:6px 12px; margin-top:8px; font-size:0.78rem; position:relative; }
+body.luteal-mode .luteal-banner { display:block; }
+
+/* TABS */
+.tabs { display:flex; background:white; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.tab { flex:1; padding:11px 2px; text-align:center; font-size:0.72rem; font-weight:600; color:var(--text-soft); cursor:pointer; border-bottom:3px solid transparent; transition:all .2s; }
+.tab.active { color:var(--pink); border-bottom-color:var(--pink); }
+.tab span { display:block; font-size:1.1rem; margin-bottom:1px; }
+
+/* CONTENT */
+.content { padding:16px 14px calc(16px + var(--safe-bottom)); }
+.section { display:none; }
+.section.active { display:block; }
+
+/* CARDS */
+.card { background:var(--card); border-radius:18px; padding:18px; margin-bottom:14px; box-shadow:var(--shadow); border:1px solid var(--border); }
+.card-title { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--text-soft); margin-bottom:13px; display:flex; align-items:center; gap:6px; }
+.card-title .dot { width:7px; height:7px; border-radius:50%; background:var(--pink); flex-shrink:0; }
+
+/* INPUTS */
+.input-group { margin-bottom:13px; }
+.input-group label { font-size:0.78rem; font-weight:600; color:var(--text-soft); display:block; margin-bottom:5px; }
+.input-row { display:flex; gap:8px; align-items:center; }
+.weight-input { flex:1; padding:11px 14px; border:2px solid var(--border); border-radius:12px; font-size:1.1rem; font-weight:700; color:var(--text); outline:none; background:var(--pink-soft); transition:border .2s; }
+.weight-input:focus { border-color:var(--pink); }
+.unit-badge { background:var(--pink); color:white; padding:11px 12px; border-radius:12px; font-weight:700; font-size:.85rem; }
+
+/* MOOD */
+.mood-row { display:flex; gap:6px; }
+.mood-btn { flex:1; padding:9px 3px; border:2px solid var(--border); border-radius:11px; background:white; cursor:pointer; text-align:center; font-size:1.25rem; transition:all .2s; }
+.mood-btn.selected { border-color:var(--pink); background:var(--pink-soft); }
+.mood-btn p { font-size:0.58rem; color:var(--text-soft); margin-top:2px; font-weight:600; }
+
+/* MATE COUNTER */
+.mate-row { display:flex; align-items:center; gap:12px; padding:12px 14px; background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border-radius:12px; border:2px solid #c8e6c9; }
+.mate-icon { font-size:1.5rem; }
+.mate-info { flex:1; }
+<br>.mate-info .mate-label { font-size:0.78rem; font-weight:700; color:#2e7d32; }
+.mate-info .mate-sub { font-size:0.68rem; color:#558b2f; margin-top:1px; }
+.mate-btns { display:flex; gap:6px; align-items:center; }
+.mate-btn { width:30px; height:30px; border-radius:50%; border:2px solid #66bb6a; background:white; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; color:#2e7d32; transition:all .2s; }
+.mate-btn:hover { background:#e8f5e9; }
+.mate-count { font-size:1.1rem; font-weight:800; color:#2e7d32; min-width:18px; text-align:center; }
+
+/* WATER */
+.water-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.water-glass { width:36px; height:36px; border-radius:8px; border:2px solid #90caf9; background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.2rem; transition:all .2s; }
+.water-glass.filled { background:#e3f2fd; border-color:#1976d2; }
+
+/* MEALS */
+.meal-area { width:100%; padding:11px 13px; border:2px solid var(--border); border-radius:12px; font-size:0.85rem; color:var(--text); resize:none; outline:none; font-family:inherit; background:var(--pink-soft); transition:border .2s; }
+.meal-area:focus { border-color:var(--pink); }
+
+/* CRAVING */
+.craving-check { display:flex; align-items:center; gap:10px; padding:11px 13px; background:#fff8e1; border-radius:12px; border:2px solid #ffe082; cursor:pointer; }
+.craving-check input { width:18px; height:18px; accent-color:var(--pink); cursor:pointer; }
+.craving-check label { font-size:0.82rem; color:#b8860b; font-weight:600; cursor:pointer; }
+
+/* FRUSTRATION */
+.frustration-alert { background:linear-gradient(135deg,#fff3e0,#fce4ec); border:2px solid #ffab91; border-radius:13px; padding:14px; margin-bottom:14px; display:none; }
+.frustration-alert h4 { color:#e64a19; font-size:0.85rem; margin-bottom:6px; }
+.frustration-alert p { font-size:0.78rem; color:#5d4037; line-height:1.5; }
+
+/* LUTEAL ALERT */
+.luteal-alert { background:linear-gradient(135deg,#f3e5f5,#fce4ec); border:2px solid #ce93d8; border-radius:13px; padding:14px; margin-bottom:14px; display:none; }
+.luteal-alert h4 { color:#7b1fa2; font-size:0.85rem; margin-bottom:7px; }
+.luteal-alert p { font-size:0.78rem; color:#4a148c; line-height:1.6; }
+body.luteal-mode .luteal-alert { display:block; }
+
+/* ACTIVITY */
+.act-row { display:flex; gap:8px; }
+.act-btn { flex:1; padding:11px 4px; border:2px solid var(--border); border-radius:11px; background:white; cursor:pointer; text-align:center; font-size:1.35rem; transition:all .2s; }
+.act-btn.selected { border-color:var(--pink); background:var(--pink-soft); }
+.act-btn p { font-size:0.62rem; font-weight:700; color:var(--text-soft); margin-top:3px; }
+
+/* SAVE */
+.save-btn { width:100%; padding:14px; background:linear-gradient(135deg,var(--pink),var(--purple)); color:white; border:none; border-radius:14px; font-size:0.95rem; font-weight:700; cursor:pointer; transition:transform .2s,box-shadow .2s; letter-spacing:.3px; }
+.save-btn:active { transform:scale(.98); }
+
+/* CYCLE SETTINGS */
+.cycle-card { background:linear-gradient(135deg,var(--luteal-light),#fce4ec); border:2px solid #ce93d8; border-radius:16px; padding:16px; margin-bottom:14px; }
+.cycle-card h4 { font-size:0.9rem; font-weight:700; color:#7b1fa2; margin-bottom:10px; }
+.cycle-input-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.cycle-input-row label { font-size:0.8rem; color:#4a148c; font-weight:600; }
+.cycle-select { padding:9px 12px; border:2px solid #ce93d8; border-radius:10px; font-size:0.85rem; color:var(--text); outline:none; background:white; font-family:inherit; }
+.cycle-info { font-size:0.75rem; color:#7b1fa2; margin-top:8px; line-height:1.5; }
+
+/* FLEXIBLE DAY */
+.flex-day-card { background:linear-gradient(135deg,#e8f5e9,#e3f2fd); border:2px solid #a5d6a7; border-radius:14px; padding:14px; margin-bottom:14px; }
+.flex-day-card h4 { font-size:0.85rem; font-weight:700; color:#1b5e20; margin-bottom:8px; }
+.flex-day-row { display:flex; gap:6px; flex-wrap:wrap; }
+.flex-day-btn { padding:7px 11px; border:2px solid #a5d6a7; border-radius:10px; background:white; font-size:0.75rem; font-weight:700; color:#2e7d32; cursor:pointer; transition:all .2s; }
+.flex-day-btn.selected { background:#e8f5e9; border-color:#2e7d32; color:#1b5e20; }
+
+/* PROGRESS STATS */
+.stats-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
+.stat-box { background:white; border-radius:13px; padding:13px 8px; text-align:center; border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.stat-box .val { font-size:1.35rem; font-weight:800; color:var(--pink); }
+.stat-box .lbl { font-size:0.62rem; color:var(--text-soft); font-weight:600; margin-top:2px; text-transform:uppercase; letter-spacing:.3px; }
+
+.chart-container { position:relative; height:190px; }
+
+/* HISTORY */
+.history-item { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); }
+.history-item:last-child { border-bottom:none; }
+.history-item .date { font-size:0.78rem; color:var(--text-soft); }
+.history-item .weight { font-size:.95rem; font-weight:700; color:var(--text); }
+.delta { font-size:0.72rem; font-weight:600; }
+.delta.down { color:var(--green); }
+.delta.up { color:var(--pink); }
+.delta.same { color:var(--text-soft); }
+
+/* INFO BOX */
+.info-box { background:linear-gradient(135deg,#e3f2fd,#e8f5e9); border-radius:13px; padding:14px; border:1px solid #bbdefb; }
+.info-box h4 { color:#1565c0; font-size:0.85rem; font-weight:700; margin-bottom:7px; }
+.info-box li { font-size:0.77rem; color:#2e7d32; padding:3px 0 3px 15px; position:relative; line-height:1.4; }
+.info-box li::before { content:'✓'; position:absolute; left:0; color:#43a047; font-weight:700; }
+
+/* PLAN */
+.plan-intro { background:linear-gradient(135deg,var(--purple-light),var(--green-light)); border-radius:13px; padding:14px; margin-bottom:14px; }
+.plan-intro p { font-size:0.82rem; color:var(--text); line-height:1.5; }
+.plan-intro strong { color:var(--purple); }
+
+.day-card { background:white; border-radius:13px; border:1px solid var(--border); margin-bottom:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.04); }
+.day-header { padding:11px 14px; background:linear-gradient(135deg,var(--pink-soft),var(--purple-light)); display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.day-header h4 { font-size:0.85rem; font-weight:700; color:var(--text); }
+.day-header .kcal { font-size:0.72rem; color:var(--purple); font-weight:700; }
+.day-body { padding:13px 14px; display:none; }
+.day-body.open { display:block; }
+.meal-item { display:flex; gap:8px; margin-bottom:9px; }
+.meal-time { font-size:0.68rem; font-weight:700; color:white; background:var(--pink); padding:3px 7px; border-radius:7px; white-space:nowrap; align-self:flex-start; margin-top:1px; }
+.meal-time.green { background:var(--green); }
+.meal-time.purple { background:var(--purple); }
+.meal-time.orange { background:#ff8a65; }
+.meal-time.luteal { background:#b06ab3; }
+.meal-desc { font-size:0.8rem; color:var(--text); line-height:1.4; }
+.meal-desc strong { color:var(--text-soft); font-size:0.72rem; font-weight:600; }
+
+/* LUTEAL PLAN */
+.luteal-plan-card { background:linear-gradient(135deg,var(--luteal-light),var(--luteal-soft)); border:2px solid #ce93d8; border-radius:16px; padding:16px; margin-bottom:14px; }
+.luteal-plan-card h4 { color:#7b1fa2; font-size:0.9rem; font-weight:700; margin-bottom:10px; }
+.luteal-food-list { display:flex; flex-wrap:wrap; gap:7px; }
+.luteal-tag { padding:6px 11px; border-radius:20px; font-size:0.75rem; font-weight:700; }
+.luteal-tag.yes { background:#e8f5e9; color:#2e7d32; }
+.luteal-tag.no { background:#fce4ec; color:#c62828; }
+
+/* TIPS */
+.tip-card { background:white; border-radius:13px; padding:15px; margin-bottom:11px; border-left:4px solid var(--pink); box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.tip-card.green { border-left-color:var(--green); }
+.tip-card.purple { border-left-color:var(--purple); }
+.tip-card.orange { border-left-color:#ff8a65; }
+.tip-card.luteal { border-left-color:#b06ab3; }
+.tip-card h4 { font-size:0.85rem; font-weight:700; color:var(--text); margin-bottom:5px; }
+.tip-card p { font-size:0.8rem; color:var(--text-soft); line-height:1.55; }
+.tag { display:inline-block; padding:3px 9px; border-radius:20px; font-size:0.7rem; font-weight:700; margin:3px 3px 0 0; }
+.tag.pink { background:var(--pink-light); color:var(--pink); }
+.tag.green { background:var(--green-light); color:#2e7d32; }
+.tag.purple { background:var(--purple-light); color:var(--purple); }
+.tag.luteal { background:var(--luteal-light); color:#7b1fa2; }
+
+/* EMPTY */
+.empty-state { text-align:center; padding:36px 20px; color:var(--text-soft); }
+.empty-state .icon { font-size:2.8rem; margin-bottom:10px; }
+.empty-state p { font-size:0.85rem; line-height:1.5; }
+
+/* TOAST */
+.toast { position:fixed; bottom:calc(22px + var(--safe-bottom)); left:50%; transform:translateX(-50%) translateY(100px); background:#2e7d32; color:white; padding:11px 22px; border-radius:30px; font-size:0.85rem; font-weight:600; transition:transform .4s; z-index:999; white-space:nowrap; box-shadow:0 4px 18px rgba(0,0,0,.2); }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+.calorie-guide { background:var(--green-light); border-radius:11px; padding:13px; margin-top:10px; }
+.calorie-guide h5 { font-size:0.8rem; font-weight:700; color:#1b5e20; margin-bottom:7px; }
+.calorie-guide p { font-size:0.76rem; color:#2e7d32; line-height:1.6; }
+
+.phase-toggle { display:flex; align-items:center; gap:10px; padding:11px 13px; background:linear-gradient(135deg,#f3e5f5,#fce4ec); border-radius:12px; border:2px solid #ce93d8; cursor:pointer; margin-bottom:14px; }
+.phase-toggle input { width:18px; height:18px; accent-color:#b06ab3; cursor:pointer; }
+.phase-toggle label { font-size:0.82rem; color:#7b1fa2; font-weight:600; cursor:pointer; flex:1; }
+
+.section-divider { text-align:center; font-size:0.72rem; color:var(--text-soft); font-weight:600; letter-spacing:.4px; text-transform:uppercase; margin:18px 0 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌸 Mi Camino a Agosto</h1>
+  <p id="headerSub">63 kg → 56 kg · Tu meta personal</p>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="mainProgress" style="width:0%"></div></div>
+  <div class="progress-label" id="mainProgressLabel">Iniciando...</div>
+  <div class="luteal-banner">🌙 Estás en fase lútea — el peso puede variar, ¡es normal!</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('registro',this)"><span>📝</span>Hoy</div>
+  <div class="tab" onclick="showTab('progreso',this)"><span>📈</span>Progreso</div>
+  <div class="tab" onclick="showTab('plan',this)"><span>🥗</span>Plan</div>
+  <div class="tab" onclick="showTab('tips',this)"><span>💡</span>Tips</div>
+  <div class="tab" onclick="showTab('config',this)"><span>⚙️</span>Ajustes</div>
+</div>
+
+<div class="content">
+
+<!-- ===== HOY ===== -->
+<div class="section active" id="section-registro">
+
+  <div class="luteal-alert">
+    <h4>🌙 Fase lútea — tu cuerpo trabaja diferente</h4>
+    <p>Los últimos días antes de tu menstruación tu cuerpo <strong>retiene hasta 1.5 kg de agua</strong> por cambios en estrógeno y progesterona. Los antojos de dulces son hormonales, no debilidad. Si subiste peso esta semana, <strong>no es grasa real</strong> — va a bajar sola cuando baje la progesterona. Priorizá proteína, magnesio y mucha agua. 💜</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><div class="dot"></div> <span id="todayDate">Hoy</span></div>
+
+    <div class="input-group">
+      <label>⚖️ Peso de hoy (en ayunas, después del baño)</label>
+      <div class="input-row">
+        <input type="number" class="weight-input" id="weightInput" placeholder="ej: 62.5" step="0.1" min="40" max="150">
+        <div class="unit-badge">kg</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>😊 ¿Cómo te sentís hoy?</label>
+      <div class="mood-row">
+        <div class="mood-btn" onclick="selectMood(this,'excelente')">🤩<p>Genial</p></div>
+        <div class="mood-btn" onclick="selectMood(this,'bien')">😊<p>Bien</p></div>
+        <div class="mood-btn" onclick="selectMood(this,'regular')">😐<p>Regular</p></div>
+        <div class="mood-btn" onclick="selectMood(this,'mal')">😞<p>Difícil</p></div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>🧉 Mate y agua de hoy</label>
+      <div class="mate-row">
+        <div class="mate-icon">🧉</div>
+        <div class="mate-info">
+          <div class="mate-label">Termos de mate</div>
+          <div class="mate-sub" id="mateSub">1 termo ≈ 500ml · ya contás ~<span id="mateWaterMl">0</span>ml de hidratación</div>
+        </div>
+        <div class="mate-btns">
+          <button class="mate-btn" onclick="changeMate(-1)">−</button>
+          <span class="mate-count" id="mateCount">0</span>
+          <button class="mate-btn" onclick="changeMate(1)">+</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <label style="font-size:0.75rem;font-weight:600;color:var(--text-soft);display:block;margin-bottom:6px;">🥤 Vasos de agua extra (250ml c/u)</label>
+        <div class="water-row" id="waterGlasses"></div>
+        <div style="font-size:0.72rem;color:var(--green);margin-top:5px;font-weight:600;" id="waterTotal">Hidratación total: 0 ml de ~2500ml meta</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>🍽️ ¿Qué comiste hoy?</label>
+      <textarea class="meal-area" id="mealsInput" rows="3" placeholder="Desayuno: yogur con frutas...&#10;Almuerzo: arroz con pollo...&#10;Cena: tortilla de verduras..."></textarea>
+    </div>
+
+    <div class="craving-check" onclick="toggleCraving()">
+      <input type="checkbox" id="cravingCheck">
+      <label>🍫 Tuve antojos de dulces / harinas hoy</label>
+    </div>
+    <div class="frustration-alert" id="frustrationAlert">
+      <h4>💛 Un momento antes de comer de más...</h4>
+      <p>Los antojos duran aprox. <strong>20 minutos</strong>. Tomá un vaso de agua, caminá 5 minutos o hacé algo con las manos. Si el antojo persiste: 2 cuadros de chocolate 70% sin gluten, dátiles o manzana con canela. El impulso pasa — y mañana te vas a sentir orgullosa. 🌸</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><div class="dot"></div> Actividad de hoy</div>
+    <div class="act-row">
+      <div class="act-btn" id="act-running" onclick="toggleAct(this,'running')"><div>🏃‍♀️</div><p>Corrí 5k</p></div>
+      <div class="act-btn" id="act-pilates" onclick="toggleAct(this,'pilates')"><div>🧘‍♀️</div><p>Pilates</p></div>
+      <div class="act-btn" id="act-caminata" onclick="toggleAct(this,'caminata')"><div>🚶‍♀️</div><p>Caminé</p></div>
+      <div class="act-btn" id="act-nada" onclick="toggleAct(this,'nada')"><div>😴</div><p>Descanso</p></div>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveToday()">✨ Guardar día de hoy</button>
+</div>
+
+<!-- ===== PROGRESO ===== -->
+<div class="section" id="section-progreso">
+  <div class="stats-row">
+    <div class="stat-box"><div class="val" id="statCurrent">—</div><div class="lbl">Hoy (kg)</div></div>
+    <div class="stat-box"><div class="val" id="statLost" style="color:var(--green)">—</div><div class="lbl">Bajé (kg)</div></div>
+    <div class="stat-box"><div class="val" id="statRemaining" style="color:var(--purple)">—</div><div class="lbl">Me falta</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="dot"></div> Mi curva de peso</div>
+    <div class="chart-container"><canvas id="weightChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="dot"></div> Historial reciente</div>
+    <div id="historyList"></div>
+  </div>
+  <div class="info-box">
+    <h4>🧠 Por qué el peso varía tanto día a día</h4>
+    <ul>
+      <li>Retención de agua: hasta 2 kg en fase lútea o si comiste sal</li>
+      <li>Glucógeno muscular: los músculos guardan agua con carbohidratos</li>
+      <li>Tránsito intestinal: puede sumar hasta 1 kg</li>
+      <li>Lo que importa: la <strong>tendencia de la semana</strong>, no el número de ayer</li>
+      <li>El peso más bajo de la semana es tu referencia real</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== PLAN ===== -->
+<div class="section" id="section-plan">
+  <div class="plan-intro">
+    <p>Plan <strong>sin gluten</strong> · ~<strong>1.500–1.600 kcal/día</strong> · déficit de ~350 kcal sobre tu gasto real · meta: <strong>0.3–0.4 kg/semana</strong> sostenido. Tu día flexible es configurable en ⚙️ Ajustes.</p>
+  </div>
+
+  <div id="planDays"></div>
+
+  <!-- LUTEAL PLAN -->
+  <div class="luteal-plan-card">
+    <h4>🌙 Plan especial para fase lútea (últimas 2 semanas del ciclo)</h4>
+    <p style="font-size:0.8rem;color:#4a148c;margin-bottom:10px;line-height:1.5;">Tu cuerpo pide más calorías (<strong>+150–200 kcal</strong> es normal y real). En vez de restringir, elegí mejor. Priorizá magnesio y proteína para reducir los antojos y el dolor.</p>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:0.76rem;font-weight:700;color:#7b1fa2;margin-bottom:6px;">✅ Alimentos aliados en esta fase:</div>
+      <div class="luteal-food-list">
+        <span class="luteal-tag yes">🍫 Choc. 70% (sin gluten)</span>
+        <span class="luteal-tag yes">🥑 Palta</span>
+        <span class="luteal-tag yes">🐟 Salmón</span>
+        <span class="luteal-tag yes">🌰 Nueces/almendras</span>
+        <span class="luteal-tag yes">🍠 Batata</span>
+        <span class="luteal-tag yes">🥦 Brócoli</span>
+        <span class="luteal-tag yes">🫐 Arándanos</span>
+        <span class="luteal-tag yes">🥚 Huevos</span>
+        <span class="luteal-tag yes">🧉 Mate (magnesio)</span>
+        <span class="luteal-tag yes">🫘 Lentejas</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:0.76rem;font-weight:700;color:#c62828;margin-bottom:6px;">❌ Potencian retención y dolor:</div>
+      <div class="luteal-food-list">
+        <span class="luteal-tag no">🧂 Sal en exceso</span>
+        <span class="luteal-tag no">☕ Café >2 tazas</span>
+        <span class="luteal-tag no">🥤 Gaseosas</span>
+        <span class="luteal-tag no">🍞 Harinas refinadas (aun sin gluten)</span>
+        <span class="luteal-tag no">🍷 Alcohol</span>
+        <span class="luteal-tag no">🍬 Azúcar blanca</span>
+      </div>
+    </div>
+    <div class="calorie-guide" style="margin-top:12px;">
+      <h5>💡 Cena anti-dolores de panza para fase lútea</h5>
+      <p>Jengibre + manzanilla en infusión antes de dormir · Arroz blanco (fácil digestión) + pollo · Caldo suave con poca fibra los días con más dolor · Banana (potasio y magnesio) antes de dormir</p>
+    </div>
+  </div>
+
+  <div class="calorie-guide">
+    <h5>🎯 Tu metabolismo personalizado</h5>
+    <p>Metabolismo basal (Mifflin-St Jeor): <strong>~1.480 kcal</strong><br>
+    Con running + pilates → gasto real: <strong>~1.920 kcal/día</strong><br>
+    Déficit saludable (-350 kcal) → comer: <strong>1.500–1.600 kcal/día</strong><br>
+    En fase lútea podés llegar a <strong>1.700 kcal</strong> sin romper el déficit semanal.</p>
+  </div>
+</div>
+
+<!-- ===== TIPS ===== -->
+<div class="section" id="section-tips">
+  <div class="tip-card luteal">
+    <h4>🌙 Por qué subís 1–2 kg las últimas 2 semanas del ciclo</h4>
+    <p>La progesterona alta en fase lútea hace que el cuerpo retenga más sodio → retiene más agua. El estrógeno bajo aumenta el cortisol → más antojos de azúcar y carbohidratos. Esto es <strong>100% bioquímico</strong>, no es que "arruinaste la dieta". El peso extra desaparece solo en los primeros días de tu período. <strong>No te pesés en esta fase para evaluar tu progreso real</strong> — usá el peso de la semana 1 y 2 del ciclo como referencia verdadera.</p>
+    <div style="margin-top:8px;"><span class="tag luteal">Agua ≠ Grasa</span><span class="tag purple">Hormonas normales</span></div>
+  </div>
+  <div class="tip-card green">
+    <h4>🧉 Tus 2 termos de mate ya cuentan mucho</h4>
+    <p>2 termos ≈ 1 litro de agua. Si agregás <strong>4–6 vasos de agua extra</strong> llegás a los 2.5 litros ideales. El mate también aporta <strong>antioxidantes, magnesio y teína</strong> (energía sin el pico de cortisol del café). En fase lútea el magnesio del mate ayuda a reducir los dolores. Evitá el mate amargo en exceso si tenés dolor de panza — en esos días cambialo por manzanilla o jengibre.</p>
+    <div style="margin-top:8px;"><span class="tag green">1L ya hecho</span><span class="tag green">+Magnesio</span></div>
+  </div>
+  <div class="tip-card">
+    <h4>🎯 Por qué subís y bajás en ciclos (y cómo salir)</h4>
+    <p>Lo que vivís es real y tiene nombre: <strong>variación de retención de agua + ciclo menstrual + respuesta al estrés</strong>. La grasa real se pierde a 0.3–0.5 kg/semana — mucho más lento que lo que muestra la balanza. La clave para salir del ciclo frustración-atracón es <strong>no pesarte en fase lútea y no compensar con restricción</strong> los días que subiste.</p>
+  </div>
+  <div class="tip-card">
+    <h4>🍫 Protocolo de 20 minutos para el antojo</h4>
+    <p>1. Tomá un vaso grande de agua fría 💧<br>2. Esperá 5 minutos haciendo otra cosa<br>3. Si persiste: 2 cuadros chocolate 70% sin gluten, dátiles, o manzana con canela<br>4. Si te rendiste igual: sin drama, retomás en la próxima comida<br><br><strong>En fase lútea los antojos son más fuertes y normales</strong>. Tener en casa opciones de reemplazo es la estrategia, no la fuerza de voluntad.</p>
+  </div>
+  <div class="tip-card purple">
+    <h4>📅 Cómo usar la balanza sin que te arruine el día</h4>
+    <p>• Pesate <strong>siempre a la mañana</strong>, en ayunas, después de ir al baño<br>
+    • En <strong>fase lútea</strong> (últimas 2 semanas): registrá el dato pero <strong>no lo uses para evaluarte</strong><br>
+    • Mirá el promedio de la semana <strong>1 y 2 del ciclo</strong> como tu peso real<br>
+    • Si subiste 1 kg de ayer a hoy sin comer de más: es agua. Siempre.</p>
+  </div>
+  <div class="tip-card orange">
+    <h4>🏃‍♀️ Optimizá tu ejercicio actual</h4>
+    <p>Con running + pilates ya estás muy bien. Para potenciarlo:<br>
+    • Corré en ayunas (o con café solo) al menos 1 vez → quema más grasa<br>
+    • Caminata de 15 min post-cena los días sin ejercicio → activa metabolismo nocturno<br>
+    • En fase lútea reemplazá el running por caminata si tenés dolores — es igual de válido<br>
+    • No compenses comiendo más los días de ejercicio</p>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title"><div class="dot"></div> Tu meta paso a paso 🗓️</div>
+    <div style="position:relative;padding-left:18px;">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--pink),var(--purple),gold);border-radius:3px;"></div>
+      <div style="margin-bottom:13px;padding-left:11px;position:relative;">
+        <div style="position:absolute;left:-16px;top:2px;width:9px;height:9px;border-radius:50%;background:var(--pink);border:2px solid white;box-shadow:0 0 0 2px var(--pink);"></div>
+        <strong style="font-size:0.83rem;">Mayo</strong>
+        <p style="font-size:0.77rem;color:var(--text-soft);margin-top:1px;">Meta: ~62 kg · establecer el hábito de registro</p>
+      </div>
+      <div style="margin-bottom:13px;padding-left:11px;position:relative;">
+        <div style="position:absolute;left:-16px;top:2px;width:9px;height:9px;border-radius:50%;background:var(--purple);border:2px solid white;box-shadow:0 0 0 2px var(--purple);"></div>
+        <strong style="font-size:0.83rem;">Junio</strong>
+        <p style="font-size:0.77rem;color:var(--text-soft);margin-top:1px;">Meta: ~60.5 kg · el cuerpo se adapta</p>
+      </div>
+      <div style="margin-bottom:13px;padding-left:11px;position:relative;">
+        <div style="position:absolute;left:-16px;top:2px;width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid white;box-shadow:0 0 0 2px var(--green);"></div>
+        <strong style="font-size:0.83rem;">Julio</strong>
+        <p style="font-size:0.77rem;color:var(--text-soft);margin-top:1px;">Meta: ~58.5 kg · lo notás en la ropa</p>
+      </div>
+      <div style="padding-left:11px;position:relative;">
+        <div style="position:absolute;left:-16px;top:2px;width:9px;height:9px;border-radius:50%;background:gold;border:2px solid white;box-shadow:0 0 0 2px gold;"></div>
+        <strong style="font-size:0.83rem;">🎯 Agosto</strong>
+        <p style="font-size:0.77rem;color:var(--text-soft);margin-top:1px;">Meta: 56 kg · llegaste de forma sostenible 🌸</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AJUSTES ===== -->
+<div class="section" id="section-config">
+
+  <div class="cycle-card">
+    <h4>🌙 Configurar ciclo menstrual</h4>
+    <p style="font-size:0.79rem;color:#4a148c;margin-bottom:12px;line-height:1.5;">Ingresá el primer día de tu último período para que la app active automáticamente el modo fase lútea en los días correctos.</p>
+    <div class="cycle-input-row">
+      <label>Último período:</label>
+      <input type="date" class="cycle-select" id="cycleStartDate">
+    </div>
+    <div class="cycle-input-row" style="margin-top:8px;">
+      <label>Duración ciclo:</label>
+      <select class="cycle-select" id="cycleDuration">
+        <option value="26">26 días</option>
+        <option value="28" selected>28 días</option>
+        <option value="30">30 días</option>
+        <option value="32">32 días</option>
+        <option value="35">35 días</option>
+      </select>
+    </div>
+    <div class="cycle-info" id="cycleInfo">Configurá tu fecha para ver tu fase actual.</div>
+    <button onclick="saveCycleConfig()" style="margin-top:12px;padding:10px 20px;background:linear-gradient(135deg,#b06ab3,#5c6bc0);color:white;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%;">💾 Guardar configuración del ciclo</button>
+  </div>
+
+  <div class="flex-day-card">
+    <h4>🎉 Elegí tu día flexible de la semana</h4>
+    <p style="font-size:0.78rem;color:#2e7d32;margin-bottom:10px;">En este día el plan tiene más calorías y más libertad.</p>
+    <div class="flex-day-row" id="flexDayRow">
+      <div class="flex-day-btn" onclick="setFlexDay(0,this)">Lun</div>
+      <div class="flex-day-btn" onclick="setFlexDay(1,this)">Mar</div>
+      <div class="flex-day-btn" onclick="setFlexDay(2,this)">Mié</div>
+      <div class="flex-day-btn" onclick="setFlexDay(3,this)">Jue</div>
+      <div class="flex-day-btn selected" onclick="setFlexDay(4,this)">Vie</div>
+      <div class="flex-day-btn" onclick="setFlexDay(5,this)">Sáb</div>
+      <div class="flex-day-btn" onclick="setFlexDay(6,this)">Dom</div>
+    </div>
+  </div>
+
+  <div class="phase-toggle" onclick="toggleManualLuteal()">
+    <input type="checkbox" id="manualLutealCheck">
+    <label>🌙 Estoy en fase lútea ahora (activar manualmente)</label>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><div class="dot"></div> Datos de tu progreso</div>
+    <div style="font-size:0.82rem;color:var(--text-soft);line-height:1.8;" id="configStats">Cargando...</div>
+    <button onclick="if(confirm('¿Borrar todos los datos? Esta acción no se puede deshacer.')){localStorage.removeItem(\'mi_camino_data\');localStorage.removeItem(\'mi_camino_config\');location.reload();}" style="margin-top:12px;padding:10px 20px;background:#fce4ec;color:#c62828;border:2px solid #ef9a9a;border-radius:10px;font-size:0.82rem;font-weight:700;cursor:pointer;width:100%;">🗑️ Borrar todos los datos</button>
+  </div>
+
+</div>
+
+</div><!-- /content -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== CONSTANTS ======
+const START_WEIGHT = 63, GOAL_WEIGHT = 56;
+const START_DATE = new Date('2025-04-29');
+const GOAL_DATE = new Date('2025-08-01');
+const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+// ====== STATE ======
+let appData = JSON.parse(localStorage.getItem('mi_camino_data') || '{}');
+let config = JSON.parse(localStorage.getItem('mi_camino_config') || '{"flexDay":4,"cycleDuration":28,"cycleStart":null,"manualLuteal":false}');
+let selectedMood = '', selectedActs = [], mateCount = 0, waterGlasses = 0;
+
+// ====== PLAN DATA ======
+const planDays = [
+  { name:'🌿 Lunes — Base proteica', kcal:'~1.530 kcal', meals:[
+    {t:'Desayuno',c:'pink',d:'Yogur griego (sin gluten) + frutos rojos + semillas de chía + té sin azúcar'},
+    {t:'Almuerzo',c:'green',d:'Pechuga de pollo a la plancha + arroz yamaní + ensalada de espinaca con aceite de oliva'},
+    {t:'Merienda',c:'orange',d:'Manzana + 15 almendras sin sal'},
+    {t:'Cena',c:'purple',d:'Tortilla de 2 huevos + vegetales salteados + rodaja de pan sin gluten'}
+  ]},
+  { name:'🐟 Martes — Omega 3', kcal:'~1.520 kcal', meals:[
+    {t:'Desayuno',c:'pink',d:'Tostadas sin gluten con palta + 2 huevos revueltos + té verde'},
+    {t:'Almuerzo',c:'green',d:'Salmón al horno + batata asada + ensalada de rúcula con limón'},
+    {t:'Merienda',c:'orange',d:'Licuado: banana + leche de almendras + 1 cda proteína (opcional)'},
+    {t:'Cena',c:'purple',d:'Sopa de lentejas con vegetales + tostada sin gluten'}
+  ]},
+  { name:'🥩 Miércoles — Carga proteica', kcal:'~1.540 kcal', meals:[
+    {t:'Desayuno',c:'pink',d:'Budín de avena sin gluten (avena certificada + banana + huevo) + café'},
+    {t:'Almuerzo',c:'green',d:'Milanesa de carne al horno + ensalada de tomate y pepino + arroz integral'},
+    {t:'Merienda',c:'orange',d:'Queso untable sin gluten con bastones de zanahoria y apio'},
+    {t:'Cena',c:'purple',d:'Cazuela de pollo con verduras sin harina (zapallo, choclo, papa)'}
+  ]},
+  { name:'🌾 Jueves — Fibra y legumbres', kcal:'~1.500 kcal', meals:[
+    {t:'Desayuno',c:'pink',d:'Huevo duro + tostadas sin gluten con tomate + café o té'},
+    {t:'Almuerzo',c:'green',d:'Ensalada de garbanzos + espinaca + tomates secos + feta + aceite de oliva'},
+    {t:'Merienda',c:'orange',d:'Yogur griego + 2 cuadros chocolate 70% sin gluten 😊'},
+    {t:'Cena',c:'purple',d:'Filete de merluza al horno con papas y verduras asadas + ensalada verde'}
+  ]},
+  { name:'🎉 Viernes — Día flexible', kcal:'~1.650 kcal (flex)', isFlexTemplate:true, meals:[
+    {t:'Desayuno',c:'pink',d:'Panqueques sin gluten (harina de arroz + huevo + leche) con miel y fruta'},
+    {t:'Almuerzo',c:'green',d:'Pollo al horno con hierbas + ensalada grande a tu gusto + arroz'},
+    {t:'Merienda',c:'orange',d:'Fruta de estación + mate + algo rico sin gluten'},
+    {t:'Cena',c:'purple',d:'🎊 Podés salir o pedir delivery. Elegí opciones sin harinas. Disfrutalo sin culpa.'}
+  ]},
+  { name:'☀️ Sábado — Recarga', kcal:'~1.700 kcal', meals:[
+    {t:'Desayuno',c:'pink',d:'Tostadas sin gluten generosas + palta + huevos pochados + jugo natural'},
+    {t:'Almuerzo',c:'green',d:'Asado o almuerzo social: carnes a la parrilla + ensaladas. Evitá pan y embutidos con TACC.'},
+    {t:'Merienda',c:'orange',d:'Frutos secos + infusión'},
+    {t:'Cena',c:'purple',d:'Sopa o ensalada con proteína — liviano para compensar el almuerzo.'}
+  ]},
+  { name:'💆 Domingo — Reset', kcal:'~1.500 kcal', meals:[
+    {t:'Desayuno',c:'pink',d:'Smoothie verde: espinaca + banana + kiwi + semillas de lino + leche de coco'},
+    {t:'Almuerzo',c:'green',d:'Tarta sin masa (o masa de quinoa): espinaca, ricota y huevo al horno'},
+    {t:'Merienda',c:'orange',d:'Manzana al horno con canela + yogur (dulce natural, mata el antojo)'},
+    {t:'Cena',c:'purple',d:'Caldo con pollo desmenuzado + tostada sin gluten. Cena temprano y liviano.'}
+  ]}
+];
+
+// ====== CYCLE ======
+function isLutealPhase() {
+  if (config.manualLuteal) return true;
+  if (!config.cycleStart) return false;
+  const start = new Date(config.cycleStart);
+  const today = new Date();
+  const daysSince = Math.floor((today - start) / 86400000);
+  const cycleDay = ((daysSince % config.cycleDuration) + config.cycleDuration) % config.cycleDuration + 1;
+  const ovulationDay = Math.round(config.cycleDuration / 2);
+  return cycleDay >= ovulationDay;
+}
+
+function applyCycleMode() {
+  if (isLutealPhase()) {
+    document.body.classList.add('luteal-mode');
+  } else {
+    document.body.classList.remove('luteal-mode');
+  }
+}
+
+function getCycleInfo() {
+  if (!config.cycleStart) return 'Configurá tu fecha para ver tu fase actual.';
+  const start = new Date(config.cycleStart);
+  const today = new Date();
+  const daysSince = Math.floor((today - start) / 86400000);
+  const cycleDay = ((daysSince % config.cycleDuration) + config.cycleDuration) % config.cycleDuration + 1;
+  const ovulationDay = Math.round(config.cycleDuration / 2);
+  const isLuteal = cycleDay >= ovulationDay;
+  const phase = isLuteal ? '🌙 Fase lútea' : '🌱 Fase folicular';
+  return `Día ${cycleDay} de tu ciclo (${config.cycleDuration} días) · ${phase}${isLuteal ? ' — modo especial activo' : ' — ¡tu mejor semana!'}`;
+}
+
+function saveCycleConfig() {
+  config.cycleStart = document.getElementById('cycleStartDate').value || null;
+  config.cycleDuration = parseInt(document.getElementById('cycleDuration').value);
+  saveConfig();
+  applyCycleMode();
+  document.getElementById('cycleInfo').textContent = getCycleInfo();
+  showToast('💾 Ciclo guardado · ' + getCycleInfo().split('·')[1]?.trim(), '#7b1fa2');
+}
+
+function toggleManualLuteal() {
+  const cb = document.getElementById('manualLutealCheck');
+  config.manualLuteal = cb.checked;
+  saveConfig();
+  applyCycleMode();
+}
+
+// ====== WATER / MATE ======
+function renderWaterGlasses() {
+  const container = document.getElementById('waterGlasses');
+  container.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const g = document.createElement('div');
+    g.className = 'water-glass' + (i < waterGlasses ? ' filled' : '');
+    g.textContent = '💧';
+    g.onclick = () => { waterGlasses = (waterGlasses === i+1) ? i : i+1; renderWaterGlasses(); updateWaterTotal(); };
+    container.appendChild(g);
+  }
+}
+
+function updateWaterTotal() {
+  const fromMate = mateCount * 500;
+  const fromWater = waterGlasses * 250;
+  const total = fromMate + fromWater;
+  document.getElementById('waterTotal').textContent = `Hidratación total: ${total} ml de ~2500ml meta ${total >= 2500 ? '✅' : total >= 1500 ? '🟡' : '🔴'}`;
+  document.getElementById('mateWaterMl').textContent = fromMate;
+}
+
+function changeMate(delta) {
+  mateCount = Math.max(0, Math.min(5, mateCount + delta));
+  document.getElementById('mateCount').textContent = mateCount;
+  updateWaterTotal();
+}
+
+// ====== PLAN RENDER ======
+function renderPlan() {
+  const fd = config.flexDay ?? 4;
+  const container = document.getElementById('planDays');
+  container.innerHTML = '';
+  planDays.forEach((day, i) => {
+    let d = {...day};
+    if (i === fd) {
+      d.name = d.name.replace(/^[^\s]+\s[^\s]+/, DAYS[fd] + ' — 🎉 Día flexible');
+      d.kcal = '~1.650 kcal (flex)';
+      d.isFlexDay = true;
+    }
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    const mealsHtml = d.meals.map(m =>
+      `<div class="meal-item"><span class="meal-time ${m.c}">${m.t}</span><div class="meal-desc">${m.d}</div></div>`
+    ).join('');
+    card.innerHTML = `
+      <div class="day-header" onclick="this.nextElementSibling.classList.toggle('open')">
+        <h4>${d.name}</h4><span class="kcal">${d.kcal}</span>
+      </div>
+      <div class="day-body">${mealsHtml}</div>`;
+    container.appendChild(card);
+  });
+}
+
+function setFlexDay(idx, el) {
+  document.querySelectorAll('.flex-day-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  config.flexDay = idx;
+  saveConfig();
+  renderPlan();
+  showToast(`🎉 Día flexible: ${DAYS[idx]}`, '#2e7d32');
+}
+
+// ====== HEADER & STATS ======
+function updateHeader() {
+  const entries = Object.values(appData).filter(e=>e.weight).sort((a,b)=>a.date.localeCompare(b.date));
+  const lastWeight = entries.length ? entries[entries.length-1].weight : START_WEIGHT;
+  const lost = START_WEIGHT - lastWeight;
+  const total = START_WEIGHT - GOAL_WEIGHT;
+  const pct = Math.max(0, Math.min(100, (lost/total)*100));
+  document.getElementById('mainProgress').style.width = pct+'%';
+  document.getElementById('mainProgressLabel').textContent = lost > 0
+    ? `Bajaste ${lost.toFixed(1)} kg de ${total} kg · ${pct.toFixed(0)}% del camino 🌸`
+    : `Empezaste en ${START_WEIGHT} kg · Meta: ${GOAL_WEIGHT} kg en agosto`;
+}
+
+function updateStats() {
+  const entries = Object.values(appData).filter(e=>e.weight).sort((a,b)=>a.date.localeCompare(b.date));
+  if (!entries.length) {
+    document.getElementById('statCurrent').textContent='—';
+    document.getElementById('statLost').textContent='0';
+    document.getElementById('statRemaining').textContent=(START_WEIGHT-GOAL_WEIGHT).toFixed(1);
+    return;
+  }
+  const cur = entries[entries.length-1].weight;
+  document.getElementById('statCurrent').textContent=cur;
+  document.getElementById('statLost').textContent=Math.max(0,START_WEIGHT-cur).toFixed(1);
+  document.getElementById('statRemaining').textContent=Math.max(0,cur-GOAL_WEIGHT).toFixed(1);
+}
+
+function renderHistory() {
+  const entries = Object.values(appData).filter(e=>e.weight).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12);
+  const c = document.getElementById('historyList');
+  if (!entries.length) { c.innerHTML='<div class="empty-state"><div class="icon">📝</div><p>Todavía no registraste ningún peso.<br>¡Empezá hoy en la pestaña "Hoy"!</p></div>'; return; }
+  let html='';
+  entries.forEach((e,i)=>{
+    const nxt=entries[i+1];
+    let dt='',dc='same';
+    if(nxt){const diff=e.weight-nxt.weight; if(Math.abs(diff)<0.05){dt='= igual';}else if(diff<0){dt=`↓${Math.abs(diff).toFixed(1)}`;dc='down';}else{dt=`↑${diff.toFixed(1)}`;dc='up';}}
+    const d=new Date(e.date);
+    const lbl=d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    const me={excelente:'🤩',bien:'😊',regular:'😐',mal:'😞'}[e.mood]||'';
+    html+=`<div class="history-item">
+      <div><div class="date">${lbl} ${me}${e.craving?' 🍫':''}</div>
+      ${e.meals?`<div style="font-size:.7rem;color:var(--text-soft);margin-top:1px;">${e.meals.substring(0,38)}${e.meals.length>38?'…':''}</div>`:''}
+      </div>
+      <div style="text-align:right;"><div class="weight">${e.weight} kg</div><div class="delta ${dc}">${dt}</div></div>
+    </div>`;
+  });
+  c.innerHTML=html;
+}
+
+function renderChart() {
+  const entries = Object.values(appData).filter(e=>e.weight).sort((a,b)=>a.date.localeCompare(b.date));
+  const totalDays = Math.ceil((GOAL_DATE-START_DATE)/86400000);
+  const dailyLoss = (START_WEIGHT-GOAL_WEIGHT)/totalDays;
+  const labels=[],actual=[],ideal=[];
+  const today=new Date();
+  for(let i=-4;i<=16;i++){
+    const d=new Date(today); d.setDate(d.getDate()+i);
+    if(d<START_DATE)continue;
+    const key=d.toISOString().split('T')[0];
+    const dys=Math.max(0,Math.floor((d-START_DATE)/86400000));
+    labels.push(d.toLocaleDateString('es-AR',{day:'numeric',month:'short'}));
+    ideal.push(+(Math.max(GOAL_WEIGHT,START_WEIGHT-dailyLoss*dys)).toFixed(2));
+    const e=appData[key]; actual.push(e&&e.weight?e.weight:null);
+  }
+  const ctx=document.getElementById('weightChart').getContext('2d');
+  if(window.myChart)window.myChart.destroy();
+  window.myChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Mi peso',data:actual,borderColor:'#e8829a',backgroundColor:'rgba(232,130,154,.1)',pointBackgroundColor:'#e8829a',pointRadius:5,tension:.3,fill:true,spanGaps:false},
+    {label:'Camino ideal',data:ideal,borderColor:'#9b7ec8',borderDash:[5,4],pointRadius:0,tension:.3,fill:false}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{y:{min:GOAL_WEIGHT-.5,max:START_WEIGHT+.5,ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},x:{ticks:{font:{size:8},maxTicksLimit:7}}}}});
+}
+
+// ====== SAVE TODAY ======
+function saveToday() {
+  const w = parseFloat(document.getElementById('weightInput').value);
+  if(!w||w<40||w>150){showToast('⚠️ Ingresá tu peso de hoy','#e64a19');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const meals=document.getElementById('mealsInput').value.trim();
+  const craving=document.getElementById('cravingCheck').checked;
+  appData[today]={date:today,weight:w,meals,mood:selectedMood,activities:selectedActs,craving,mate:mateCount,water:waterGlasses};
+  localStorage.setItem('mi_camino_data',JSON.stringify(appData));
+  const lost=(START_WEIGHT-w).toFixed(1);
+  showToast(`✅ Guardado · ${w} kg${lost>0?' · Bajaste '+lost+' kg 🌸':''}`, '#2e7d32');
+  updateHeader();
+  resetForm();
+}
+
+function resetForm(){
+  document.getElementById('weightInput').value='';
+  document.getElementById('mealsInput').value='';
+  document.getElementById('cravingCheck').checked=false;
+  document.getElementById('frustrationAlert').style.display='none';
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.act-btn').forEach(b=>b.classList.remove('selected'));
+  selectedMood=''; selectedActs=[]; mateCount=0; waterGlasses=0;
+  document.getElementById('mateCount').textContent='0';
+  renderWaterGlasses(); updateWaterTotal();
+}
+
+// ====== UI HELPERS ======
+function showTab(tab,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('section-'+tab).classList.add('active');
+  el.classList.add('active');
+  if(tab==='progreso'){updateStats();renderHistory();renderChart();}
+  if(tab==='config'){loadConfigUI();}
+}
+function selectMood(el,mood){document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');selectedMood=mood;}
+function toggleAct(el,act){
+  if(selectedActs.includes(act)){selectedActs=selectedActs.filter(a=>a!==act);el.classList.remove('selected');}
+  else{selectedActs.push(act);el.classList.add('selected');}
+}
+function toggleCraving(){
+  const cb=document.getElementById('cravingCheck');
+  document.getElementById('frustrationAlert').style.display=cb.checked?'block':'none';
+}
+function showToast(msg,bg='#2e7d32'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=bg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500);
+}
+function saveConfig(){localStorage.setItem('mi_camino_config',JSON.stringify(config));}
+
+function loadConfigUI(){
+  if(config.cycleStart)document.getElementById('cycleStartDate').value=config.cycleStart;
+  document.getElementById('cycleDuration').value=config.cycleDuration||28;
+  document.getElementById('cycleInfo').textContent=getCycleInfo();
+  document.getElementById('manualLutealCheck').checked=config.manualLuteal||false;
+  const fd=config.flexDay??4;
+  document.querySelectorAll('.flex-day-btn').forEach((b,i)=>{b.classList.toggle('selected',i===fd);});
+  const entries=Object.values(appData).filter(e=>e.weight);
+  document.getElementById('configStats').innerHTML=`
+    Días registrados: <strong>${entries.length}</strong><br>
+    Primer registro: <strong>${entries.length?entries.sort((a,b)=>a.date.localeCompare(b.date))[0].date:'—'}</strong><br>
+    Fase actual: <strong>${getCycleInfo().split('·')[1]?.trim()||'—'}</strong>
+  `;
+}
+
+// ====== INIT ======
+function init(){
+  const today=new Date();
+  document.getElementById('todayDate').textContent=today.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  applyCycleMode();
+  updateHeader();
+  renderWaterGlasses();
+  updateWaterTotal();
+  renderPlan();
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+}
+init();
+</script>
+</body>
+</html>
